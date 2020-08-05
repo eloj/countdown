@@ -57,9 +57,13 @@ func TestVerifyWord(t *testing.T) {
 	}
 
 	tests := []TestCase{
+		{"in", "", false},
+		{"", "abc", true},
 		{"in", "abiijn", true},
 		{"in", "abcdeout", false},
+		{"aaabceins", "abceginsv", false}, // abaisance
 		{sortWord("strudels"), "deilrsstu", true},
+		{"deilrsstu", sortWord("strudels"), false}, // swap input and target
 		{sortWord("strudels"), "deilrsst", false},
 	}
 
