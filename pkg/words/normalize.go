@@ -15,7 +15,6 @@ func NormalizeLatin1(word string) string {
 	word = strings.ToLower(word)
 
 	runeMapping := runes.Map(func(r rune) rune {
-		// r == utf8.RuneError?!
 		if !utf8.ValidRune(r) || unicode.IsControl(r) {
 			return ' '
 		}
