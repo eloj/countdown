@@ -6,10 +6,10 @@ import (
 
 func TestNormalizeLatin1(t *testing.T) {
 	var tests = map[string]string{
-		"ABC":			"abc",			// lowercase
-		"ab\uFFFD":		"ab ",			// replace invalid rune
-		"ab\t\n":		"ab  ",			// replace control characters
-		"ÅåÄäÖö":		"ååääöö",		// retained
+		"ABC":      "abc",    // lowercase
+		"ab\uFFFD": "ab ",    // replace invalid rune
+		"ab\t\n":   "ab  ",   // replace control characters
+		"ÅåÄäÖö":   "ååääöö", // retained
 	}
 
 	numErr := 0

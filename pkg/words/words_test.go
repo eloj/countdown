@@ -6,9 +6,9 @@ import (
 
 func TestSortWord(t *testing.T) {
 	var tests = map[string]string{
-		"":				"",
-		"SUDRELSIT":	"DEILRSSTU",
-		"ZZzzAAaa":		"AAZZaazz",
+		"":          "",
+		"SUDRELSIT": "DEILRSSTU",
+		"ZZzzAAaa":  "AAZZaazz",
 	}
 
 	numErr := 0
@@ -27,11 +27,11 @@ func TestSortWord(t *testing.T) {
 
 func TestDeriveKey32(t *testing.T) {
 	var tests = map[string]uint32{
-		"deilrsstu":	0x001e0918,
-		"az":			0x02000001,
-		"a":			0x00000001,
-		"z":			0x02000000,
-		"INVALIDb":		0x80000002,
+		"deilrsstu": 0x001e0918,
+		"az":        0x02000001,
+		"a":         0x00000001,
+		"z":         0x02000000,
+		"INVALIDb":  0x80000002,
 	}
 
 	numErr := 0
@@ -51,16 +51,16 @@ func TestDeriveKey32(t *testing.T) {
 func TestVerifyWord(t *testing.T) {
 
 	type TestCase struct {
-		input string
-		target string
+		input    string
+		target   string
 		expected bool
 	}
 
 	tests := []TestCase{
-		{ "in", "abiijn", true },
-		{ "in", "abcdeout", false },
-		{ sortWord("strudels"), "deilrsstu", true },
-		{ sortWord("strudels"), "deilrsst", false },
+		{"in", "abiijn", true},
+		{"in", "abcdeout", false},
+		{sortWord("strudels"), "deilrsstu", true},
+		{sortWord("strudels"), "deilrsst", false},
 	}
 
 	numErr := 0
@@ -76,4 +76,3 @@ func TestVerifyWord(t *testing.T) {
 		t.Fatalf("%d VerifyWord failures.", numErr)
 	}
 }
-

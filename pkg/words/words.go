@@ -1,19 +1,19 @@
 package words
 
 import (
-	"io"
-	"fmt"
-	"os"
 	"bufio"
-	"sort"
+	"fmt"
+	"io"
 	"math/bits"
+	"os"
+	"sort"
 )
 
 // TODO: Add compare function for these, use instead of validateWord?
 type wordentry struct {
-	key  uint32
-	dups int 		// number of duplicate characters in word.
-	word string
+	key    uint32
+	dups   int // number of duplicate characters in word.
+	word   string
 	sorted string
 }
 
@@ -39,9 +39,9 @@ func sortWord(word string) string {
 func deriveKey32(word string) uint32 {
 	var key uint32
 
-	for i:=0 ; i < len(word) ; i++ {
+	for i := 0; i < len(word); i++ {
 		ch := word[i]
-		if (ch >= 'a' && ch <= 'z') {
+		if ch >= 'a' && ch <= 'z' {
 			key |= 1 << (ch - 'a')
 		} else {
 			key |= 1 << 31 // Unknown-bit
@@ -53,17 +53,16 @@ func deriveKey32(word string) uint32 {
 type Countdown struct {
 	minlen int
 	maxlen int
-	words []wordentry
+	words  []wordentry
 }
 
-func NewCountdown(minlen int, maxlen int) (*Countdown) {
+func NewCountdown(minlen int, maxlen int) *Countdown {
 	cd := &Countdown{}
 	cd.minlen = minlen
 	cd.maxlen = maxlen
 	cd.words = make([]wordentry, 0, 1024)
 	return cd
 }
-
 
 // All characters in word must exist in target.
 func verifyWord(word string, target string) bool {
@@ -72,7 +71,7 @@ func verifyWord(word string, target string) bool {
 
 	var j int
 	var i int
-	for i = 0 ; i < len(sw) && j < len(tw) ; i++ {
+	for i = 0; i < len(sw) && j < len(tw); i++ {
 		// Scan forward if current character larger than target's.
 		for sw[i] > tw[j] {
 			j++
@@ -110,11 +109,11 @@ func (cd *Countdown) FindWords(s string, maxdist int) {
 		// fmt.Printf("I:%032b\nW:%032b -- %s\n= %032b (false=%d)\n", target.key, word.key, word.word, target.key & word.key, falsebits)
 
 		if falsebits == 0 {
-			hamming_est := len(target.sorted)- bits.OnesCount32(target.key & word.key)
+			hamming_est := len(target.sorted) - bits.OnesCount32(target.key&word.key)
 
 			if /* hamming_est <= maxdist && */ verifyWord(word.sorted, target.sorted) {
 				dist := len(target.sorted) - len(word.sorted)
-				if (dist <= maxdist) {
+				if dist <= maxdist {
 					fmt.Printf("Found word #%d '%s', hamming estimate=%d, real distance=%d\n", i, word.word, hamming_est, dist)
 					hits++
 				} else {
@@ -133,7 +132,7 @@ func (cd *Countdown) FindWords(s string, maxdist int) {
 func (cd *Countdown) addWord(word string) bool {
 	we := NewWordEntry(word)
 
-	if (we.key == 0) {
+	if we.key == 0 {
 		return false
 	}
 

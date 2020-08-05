@@ -1,10 +1,10 @@
 package main
 
 import (
-	"fmt"
-	"os"
-	"log"
 	"flag"
+	"fmt"
+	"log"
+	"os"
 
 	cntw "countdown/pkg/words"
 )
