@@ -5,3 +5,4 @@ if [ $? -ne 0 ]; then
 	exit 1
 fi
 go build ./cmd/words-cli
+go build ./cmd/words-server

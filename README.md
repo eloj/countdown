@@ -15,9 +15,9 @@ All code is provided under the [MIT License](LICENSE).
 
 ## To Do
 
-* Interactive mode.
+* Finish web service
 * Benchmarks
-* Web service
+* Interactive mode.
 * The actual optimization work I have in mind.
 * zerolog
-
+* Docker packaging?

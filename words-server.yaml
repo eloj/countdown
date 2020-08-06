@@ -1,0 +1,7 @@
+--- 
+min_word_len: 4
+max_word_len: 9
+dictionaries:
+ - data/words-countdown.txt
+# - /home/eddy/dev/english-words-alpha.txt
+port: 8080
