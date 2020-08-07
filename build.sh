@@ -1,6 +1,5 @@
 #!/bin/bash
-echo "Running tests"
-go test ./...
+go test ./... 2>&1 | tee .gotest.log
 if [ $? -ne 0 ]; then
 	echo "Test failures. Build aborted."
 	exit 1
