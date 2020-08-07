@@ -3,6 +3,6 @@ language: go
 go:
  - "1.x"
 before_install:
-  - uname -a
   - lsb_release -a
+  - sudo apt-get -y install yamllint
 script: ./build.sh
