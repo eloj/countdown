@@ -74,7 +74,7 @@ func startHttpServer(wg *sync.WaitGroup) *http.Server {
 }
 
 func main() {
-	conffile := flag.String("config", "words-server.yaml", "Configuration file")
+	conffile := flag.String("config", "config/words-server.yaml", "Configuration file")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [options]\n", os.Args[0])
