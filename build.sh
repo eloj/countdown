@@ -1,4 +1,7 @@
 #!/bin/bash
+root=$(realpath $(dirname "${BASH_SOURCE[0]}"))
+cd "$root"
+
 go test ./... 2>&1 | tee .gotest.log
 if [ $? -ne 0 ]; then
 	echo "Test failures. Build aborted."
@@ -10,7 +13,8 @@ if [ -x "$(command -v yamllint)" ]; then
 else
 	echo "Configuration file validation skipped, 'yamllint' not available."
 fi
-echo "Building cmds..."
-go build ./cmd/words-cli
-go build ./cmd/words-server
+echo "Building..."
+GOBUILD="env CGO_ENABLED=0 go build"
+$GOBUILD ./cmd/words-cli
+$GOBUILD ./cmd/words-server
 echo "Build done."
