@@ -18,6 +18,9 @@ All code is provided under the [MIT License](LICENSE).
 * Finish web service
 * Benchmarks
 * Interactive mode.
-* The actual optimization work I have in mind.
+* The actual optimization work I have in mind: byte buffer for string data + index buffer /w offsets.
 * zerolog
+* golint
+* Swagger API spec
+* example http client to got with server
 * Docker packaging?
