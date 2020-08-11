@@ -24,15 +24,30 @@ type State struct {
 	cw *cntw.Countdown
 }
 
+type ErrorResponse struct {
+	Error       string `json:"error"`
+	Description string `json:"description,omitempty"`
+}
+
+type WordsResponse struct {
+	Query      string   `json:"query"`
+	Duration   float64  `json:"duration"` // In ms, document.
+	NumHits    int      `json:"num_hits"`
+	NumChecked int      `json:"num_checked"`
+	MinDist    int      `json:"min_dist,omitempty"` // Only valid if words > 0
+	MaxDist    int      `json:"max_dist,omitempty"` // ibid.
+	Words      []string `json:"words"`
+}
+
 var (
 	conf  Config
 	state State
 )
 
-func Response(w http.ResponseWriter, status int, payload interface{}) error {
+func SendResponse(w http.ResponseWriter, status int, payload interface{}) error {
 	b, err := json.Marshal(payload)
 	if err != nil {
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return err
 	}
 
@@ -42,14 +57,70 @@ func Response(w http.ResponseWriter, status int, payload interface{}) error {
 	return err
 }
 
+func SendErrorResponse(w http.ResponseWriter, status int, msg string, desc string) error {
+	res := ErrorResponse{Error: msg, Description: desc}
+	return SendResponse(w, status, res)
+
+}
+
 func (state *State) wordsHandler(w http.ResponseWriter, r *http.Request) {
+
+	if !strings.HasPrefix(r.URL.Path, "/countdown/v1/words/") {
+		w.WriteHeader(http.StatusNotFound)
+		return
+
+	}
+
+	switch r.Method {
+	case "GET":
+		// TODO: Separate module for parsing and validation + error returns.
+		// args, err := url.ParseQuery(r.URL.Query())
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
 	scramble := strings.TrimPrefix(r.URL.Path, "/countdown/v1/words/")
 
-	maxdist := 3
+	// TODO: Limit parameter ranges. Error on out-of-range.
+	maxdist := 4
+	maxhits := 10
 
-	result := state.cw.FindWords(scramble, maxdist)
+	start := time.Now()
+	// BUG: Current algorithm can't make meaninful use of maxhits -- it will when we fix it later.
+	result := state.cw.FindWords(scramble, maxhits, maxdist)
+	elapsed := time.Since(start)
 
-	Response(w, 200, result.Sort())
+	// Sort and extract just the words for the response
+	sorted := result.Sort()
+
+	sorted_words := make([]string, 0, len(sorted))
+	for i, worddist := range sorted {
+		// sorted_words[i] = worddist.Word
+		// Temporary -- maxhits not effective yet.
+		sorted_words = append(sorted_words, worddist.Word)
+		if i == maxhits && maxhits > 0 {
+			break
+		}
+	}
+
+	res := WordsResponse{
+		Query:      result.Query,
+		Duration:   float64(elapsed) / float64(time.Millisecond),
+		NumHits:    result.NumHits,
+		NumChecked: result.NumChecked,
+		MinDist:    0,
+		MaxDist:    0,
+		Words:      sorted_words,
+	}
+
+	// Extract actual min and max distance of result
+	if len(sorted_words) > 0 {
+		res.MinDist = sorted[0].Dist
+		res.MaxDist = sorted[len(sorted_words)-1].Dist
+	}
+
+	SendResponse(w, 200, res)
 }
 
 func startHttpServer(wg *sync.WaitGroup) *http.Server {
