@@ -2,7 +2,6 @@ package words
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"math/bits"
 	"os"
@@ -56,13 +55,14 @@ type Countdown struct {
 	words  []searchEntry
 }
 
-type WordResult struct {
+type WordDistResult struct {
 	Word string
 	Dist int
 }
 
 type FindWordsResult struct {
-	Words []WordResult
+	Query string
+	Words []WordDistResult
 
 	NumChecked   int
 	NumHits      int
@@ -71,13 +71,17 @@ type FindWordsResult struct {
 	NumDistFail  int
 }
 
-func NewFindWordsResult() FindWordsResult {
+func NewFindWordsResult(capacity int) FindWordsResult {
 	result := FindWordsResult{}
-	result.Words = make([]WordResult, 0, 32)
+	/*
+		if capacity == 0 {
+			capacity = 32
+		}*/
+	result.Words = make([]WordDistResult, 0, capacity)
 	return result
 }
 
-func (result *FindWordsResult) Sort() []WordResult {
+func (result *FindWordsResult) Sort() []WordDistResult {
 	sort.Slice(result.Words, func(i, j int) bool {
 		if result.Words[i].Dist == result.Words[j].Dist {
 			return result.Words[i].Word < result.Words[j].Word
@@ -121,12 +125,27 @@ func verifyWord(word string, target string) bool {
 	return i == len(sw)
 }
 
-func (cd *Countdown) FindWords(s string, maxdist int) FindWordsResult {
+// ClampInt Clamps an int to the range determined by the lo and hi arguments and returns it.
+// Can we have a math.Clamp() please?
+func ClampInt(value int, lo int, hi int) int {
+	if value < lo {
+		value = lo
+	} else if value > hi {
+		value = hi
+	}
+	return value
+}
+
+func (cd *Countdown) FindWords(s string, maxhits int, maxdist int) FindWordsResult {
 	target := NewWordEntry(s)
 
-	fmt.Printf("FIND on %#v\n", target)
+	// LOG: fmt.Printf("FIND on %#v\n", target)
 
-	result := NewFindWordsResult()
+	// Ensure that poorly constructed clients can't allocate too much memory.
+	maxhits = ClampInt(maxhits, 0, 1<<12)
+
+	result := NewFindWordsResult(maxhits)
+	result.Query = target.word
 
 	for _, word := range cd.words {
 		result.NumChecked++
@@ -136,13 +155,14 @@ func (cd *Countdown) FindWords(s string, maxdist int) FindWordsResult {
 		// fmt.Printf("I:%032b\nW:%032b -- %s\n= %032b (false=%d)\n", target.key, word.key, word.word, target.key & word.key, falsebits)
 
 		if falsebits == 0 {
+			// TODO: Test out if hamming estimate is a useful (and correct) optimization.
 			// hamming_est := len(target.sorted) - bits.OnesCount32(target.key&word.key) // then maxdist + math.Abs(target.dups - word.dups)
 
 			if /* hamming_est <= maxdist && */ verifyWord(word.sorted, target.sorted) {
 				dist := len(target.sorted) - len(word.sorted)
 				if maxdist < 0 || dist <= maxdist {
-					// fmt.Printf("Found word #%d '%s', hamming estimate=%d, real distance=%d\n", i, word.word, hamming_est, dist)
-					result.Words = append(result.Words, WordResult{word.word, dist})
+					// fmt.Printf("Found word #%d '%s', hamming weight estimate=%d, real distance=%d\n", i, word.word, hamming_est, dist)
+					result.Words = append(result.Words, WordDistResult{word.word, dist})
 					result.NumHits++
 				} else {
 					result.NumDistFail++
