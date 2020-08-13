@@ -26,6 +26,12 @@ type Countdown struct {
 	lvl    []CountdownWords
 }
 
+// CountdownWords represents a set of search words of the same length.
+type CountdownWords struct {
+	keys  []uint32 // Scanning this more than doubles the search speed vs iterating over the word entries.
+	words []CountdownSearchEntry
+}
+
 type WordDistResult struct {
 	Word string
 	Dist int
@@ -40,6 +46,18 @@ type FindWordsResult struct {
 	NumFalseBits int
 	NumInvalid   int
 	NumDistFail  int
+}
+
+func NewCountdownWords() CountdownWords {
+	cdw := CountdownWords{}
+	cdw.keys = make([]uint32, 0, 1024)
+	cdw.words = make([]CountdownSearchEntry, 0, 1024)
+	return cdw
+}
+
+func (cdw *CountdownWords) Add(se CountdownSearchEntry) {
+	cdw.keys = append(cdw.keys, se.key)
+	cdw.words = append(cdw.words, se)
 }
 
 func NewFindWordsResult(capacity int) FindWordsResult {
