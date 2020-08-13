@@ -18,6 +18,8 @@ import (
 	"time"
 
 	cntw "countdown/pkg/words"
+
+	"github.com/rs/zerolog/log"
 )
 
 type State struct {
@@ -98,9 +100,11 @@ func (state *State) wordsHandler(w http.ResponseWriter, r *http.Request) {
 		sorted_words[i] = worddist.Word
 	}
 
+	duration_ms := float64(elapsed) / float64(time.Millisecond)
+
 	res := WordsResponse{
 		Query:      result.Query,
-		Duration:   float64(elapsed) / float64(time.Millisecond),
+		Duration:   duration_ms,
 		NumHits:    result.NumHits,
 		NumChecked: result.NumChecked,
 		MinDist:    0,
@@ -113,6 +117,8 @@ func (state *State) wordsHandler(w http.ResponseWriter, r *http.Request) {
 		res.MinDist = sorted[0].Dist
 		res.MaxDist = sorted[len(sorted_words)-1].Dist
 	}
+
+	log.Debug().Str("q", scramble).Int("hits", res.NumHits).Int("checked", res.NumChecked).Dur("find_ms", elapsed).Msg("Query")
 
 	SendResponse(w, 200, res)
 }
@@ -130,8 +136,7 @@ func startHttpServer(wg *sync.WaitGroup) *http.Server {
 		defer wg.Done()
 
 		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-			// TODO: Log the error
-			fmt.Fprintf(os.Stderr, "ListenAndServer: %v", err)
+			log.Error().Err(err).Msg("ListenAndServe error")
 		}
 	}()
 
@@ -153,7 +158,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("CONFIG:%#v\n", conf)
+	log.Info().Interface("configuration", conf).Msg("")
 
 	state.cw = cntw.NewCountdown(conf.MinWordLen, conf.MaxWordLen)
 
@@ -162,7 +167,7 @@ func main() {
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error loading dictionary '%s', skipped.\n", dict)
 		} else {
-			fmt.Printf("%d words loaded from '%s'.\n", num, dict)
+			log.Info().Int("words", num).Str("source", dict).Msg("Loaded dictionary.")
 		}
 	}
 
@@ -172,7 +177,7 @@ func main() {
 	signalch := make(chan os.Signal, 1)
 	signal.Notify(signalch, os.Interrupt, syscall.SIGTERM)
 
-	fmt.Printf("Server running. Waiting for signal.\n")
+	log.Info().Msg("Server started. Waiting for signal.")
 
 	select {
 	case <-signalch:
@@ -182,10 +187,10 @@ func main() {
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		// log error
+		log.Error().Err(err).Msg("Shutdown error")
 	}
 
 	httpServerWg.Wait()
 
-	fmt.Printf("All done.\n")
+	log.Info().Msg("Server exiting.")
 }

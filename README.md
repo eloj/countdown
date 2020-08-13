@@ -48,7 +48,6 @@ $ curl -s localhost:8080/countdown/v1/words/LESRNOXIS | json_pp
 
 * Finish web service
 * Interactive mode.
-* zerolog
 * golint
 * Benchmarks
 * Swagger API spec
