@@ -47,11 +47,10 @@ $ curl -s localhost:8080/countdown/v1/words/LESRNOXIS | json_pp
 ## To Do
 
 * Finish web service
-* Benchmarks
 * Interactive mode.
-* The actual optimization work I have in mind: byte buffer for string data + index buffer /w offsets.
 * zerolog
 * golint
+* Benchmarks
 * Swagger API spec
 * Example http client to go with server
 * Docker packaging?

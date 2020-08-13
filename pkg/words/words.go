@@ -9,15 +9,15 @@ import (
 	"strings"
 )
 
-type searchEntry struct {
+type CountdownSearchEntry struct {
 	key    uint32
 	word   string
 	sorted string
 	// dups   int // number of duplicate characters in word.
 }
 
-func NewSearchEntry(word string) searchEntry {
-	we := searchEntry{}
+func NewSearchEntry(word string) CountdownSearchEntry {
+	we := CountdownSearchEntry{}
 
 	we.word = strings.TrimSpace(NormalizeLatin1(word))
 	we.sorted = sortWord(we.word)
@@ -60,17 +60,17 @@ func clampInt(value int, lo int, hi int) int {
 // CountdownWords represents a set search words and keys sharing the same length.
 type CountdownWords struct {
 	keys []uint32 // The keys array more than doubles the search speed vs iterating over the words array directly.
-	words  []searchEntry
+	words  []CountdownSearchEntry
 }
 
 func NewCountdownWords() CountdownWords {
 	cdw := CountdownWords{}
 	cdw.keys = make([]uint32, 0, 1024)
-	cdw.words = make([]searchEntry, 0, 1024)
+	cdw.words = make([]CountdownSearchEntry, 0, 1024)
 	return cdw
 }
 
-func (cdw *CountdownWords) Add(se searchEntry) {
+func (cdw *CountdownWords) Add(se CountdownSearchEntry) {
 	cdw.keys = append(cdw.keys, se.key)
 	cdw.words = append(cdw.words, se)
 }
@@ -119,7 +119,7 @@ func NewCountdown(minlen int, maxlen int) *Countdown {
 	cd.maxlen = maxlen
 	levels := maxlen - minlen + 1;
 	cd.lvl = make([]CountdownWords, levels)
-	for i, _ := range cd.lvl {
+	for i := range cd.lvl {
 		cd.lvl[i] = NewCountdownWords()
 	}
 	return cd
