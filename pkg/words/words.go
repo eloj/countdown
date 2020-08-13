@@ -6,24 +6,23 @@ import (
 	"math/bits"
 	"os"
 	"sort"
+	"strings"
 )
 
-// TODO: Add compare function for these, use instead of validateWord?
 type searchEntry struct {
 	key    uint32
-	dups   int // number of duplicate characters in word.
 	word   string
 	sorted string
+	// dups   int // number of duplicate characters in word.
 }
 
-func NewWordEntry(word string) searchEntry {
+func NewSearchEntry(word string) searchEntry {
 	we := searchEntry{}
 
-	// TODO: Trim?
-	we.word = NormalizeLatin1(word)
+	we.word = strings.TrimSpace(NormalizeLatin1(word))
 	we.sorted = sortWord(we.word)
 	we.key = deriveKey32(we.sorted)
-	we.dups = len(word) - bits.OnesCount32(we.key)
+	// we.dups = len(word) - bits.OnesCount32(we.key)
 
 	return we
 }
@@ -34,7 +33,6 @@ func sortWord(word string) string {
 	return string(ra)
 }
 
-// TODO: Should have re-mapping support for extra chars. Room for 6 (32-25-1)
 func deriveKey32(word string) uint32 {
 	var key uint32
 
@@ -49,10 +47,38 @@ func deriveKey32(word string) uint32 {
 	return key
 }
 
+// clampInt Clamps an int to the range determined by the lo and hi arguments and returns it.
+func clampInt(value int, lo int, hi int) int {
+	if value < lo {
+		value = lo
+	} else if value > hi {
+		value = hi
+	}
+	return value
+}
+
+// CountdownWords represents a set search words and keys sharing the same length.
+type CountdownWords struct {
+	keys []uint32 // The keys array more than doubles the search speed vs iterating over the words array directly.
+	words  []searchEntry
+}
+
+func NewCountdownWords() CountdownWords {
+	cdw := CountdownWords{}
+	cdw.keys = make([]uint32, 0, 1024)
+	cdw.words = make([]searchEntry, 0, 1024)
+	return cdw
+}
+
+func (cdw *CountdownWords) Add(se searchEntry) {
+	cdw.keys = append(cdw.keys, se.key)
+	cdw.words = append(cdw.words, se)
+}
+
 type Countdown struct {
 	minlen int
 	maxlen int
-	words  []searchEntry
+	lvl []CountdownWords
 }
 
 type WordDistResult struct {
@@ -73,10 +99,6 @@ type FindWordsResult struct {
 
 func NewFindWordsResult(capacity int) FindWordsResult {
 	result := FindWordsResult{}
-	/*
-		if capacity == 0 {
-			capacity = 32
-		}*/
 	result.Words = make([]WordDistResult, 0, capacity)
 	return result
 }
@@ -95,7 +117,11 @@ func NewCountdown(minlen int, maxlen int) *Countdown {
 	cd := &Countdown{}
 	cd.minlen = minlen
 	cd.maxlen = maxlen
-	cd.words = make([]searchEntry, 0, 1024)
+	levels := maxlen - minlen + 1;
+	cd.lvl = make([]CountdownWords, levels)
+	for i, _ := range cd.lvl {
+		cd.lvl[i] = NewCountdownWords()
+	}
 	return cd
 }
 
@@ -125,53 +151,53 @@ func verifyWord(word string, target string) bool {
 	return i == len(sw)
 }
 
-// ClampInt Clamps an int to the range determined by the lo and hi arguments and returns it.
-// Can we have a math.Clamp() please?
-func ClampInt(value int, lo int, hi int) int {
-	if value < lo {
-		value = lo
-	} else if value > hi {
-		value = hi
-	}
-	return value
-}
-
 func (cd *Countdown) FindWords(s string, maxhits int, maxdist int) FindWordsResult {
-	target := NewWordEntry(s)
+	target := NewSearchEntry(s)
 
-	// LOG: fmt.Printf("FIND on %#v\n", target)
+	// Adjust to be within valid range.
+	if maxdist < 0 || maxdist > cd.maxlen {
+		maxdist = cd.maxlen - cd.minlen
+	}
 
 	// Ensure that poorly constructed clients can't allocate too much memory.
-	maxhits = ClampInt(maxhits, 0, 1<<12)
+	maxhits = clampInt(maxhits, 0, 1<<12)
 
 	result := NewFindWordsResult(maxhits)
 	result.Query = target.word
 
-	for _, word := range cd.words {
-		result.NumChecked++
+scankeys:
+	// Scan words of decreasing length ...
+	for level := 0 ; level <= maxdist ; level++ {
+		for idx, wordKey := range cd.lvl[level].keys {
+			result.NumChecked++
 
-		falsebits := bits.OnesCount32((target.key ^ word.key) & word.key)
+			// We can immediately reject words using characters that are not in the target.
+			falsebits := bits.OnesCount32((target.key ^ wordKey) & wordKey)
 
-		// fmt.Printf("I:%032b\nW:%032b -- %s\n= %032b (false=%d)\n", target.key, word.key, word.word, target.key & word.key, falsebits)
+			// fmt.Printf("I:%032b\nW:%032b -- %s\n= %032b (false=%d)\n", target.key, word.key, word.word, target.key & word.key, falsebits)
 
-		if falsebits == 0 {
-			// TODO: Test out if hamming estimate is a useful (and correct) optimization.
-			// hamming_est := len(target.sorted) - bits.OnesCount32(target.key&word.key) // then maxdist + math.Abs(target.dups - word.dups)
+			if falsebits == 0 {
+				word := cd.lvl[level].words[idx]
+				// TODO: Test out if hamming estimate is a useful (and correct) optimization.
+				// hamming_est := len(target.sorted) - bits.OnesCount32(target.key&word.key) // then maxdist + math.Abs(target.dups - word.dups)
 
-			if /* hamming_est <= maxdist && */ verifyWord(word.sorted, target.sorted) {
-				dist := len(target.sorted) - len(word.sorted)
-				if maxdist < 0 || dist <= maxdist {
-					// fmt.Printf("Found word #%d '%s', hamming weight estimate=%d, real distance=%d\n", i, word.word, hamming_est, dist)
-					result.Words = append(result.Words, WordDistResult{word.word, dist})
-					result.NumHits++
+				if verifyWord(word.sorted, target.sorted) {
+					dist := len(target.sorted) - len(word.sorted)
+					if maxdist < 0 || dist <= maxdist {
+						result.Words = append(result.Words, WordDistResult{word.word, dist})
+						result.NumHits++
+						if result.NumHits >= maxhits && maxhits > 0 {
+							break scankeys
+						}
+					} else {
+						result.NumDistFail++
+					}
 				} else {
-					result.NumDistFail++
+					result.NumInvalid++
 				}
 			} else {
-				result.NumInvalid++
+				result.NumFalseBits++
 			}
-		} else {
-			result.NumFalseBits++
 		}
 	}
 
@@ -179,13 +205,15 @@ func (cd *Countdown) FindWords(s string, maxhits int, maxdist int) FindWordsResu
 }
 
 func (cd *Countdown) addWord(word string) bool {
-	we := NewWordEntry(word)
+	we := NewSearchEntry(word)
 
 	if we.key == 0 {
 		return false
 	}
 
-	cd.words = append(cd.words, we)
+	// Add the search data to the hierarchy, based on its length.
+	level := cd.maxlen - len(we.sorted)
+	cd.lvl[level].Add(we)
 
 	return true
 }
