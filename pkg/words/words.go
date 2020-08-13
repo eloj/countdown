@@ -151,7 +151,7 @@ func verifyWord(word string, target string) bool {
 	return i == len(sw)
 }
 
-func (cd *Countdown) FindWords(s string, maxhits int, maxdist int) FindWordsResult {
+func (cd *Countdown) FindWords(s string, limit int, maxdist int) FindWordsResult {
 	target := NewSearchEntry(s)
 
 	// Adjust to be within valid range.
@@ -160,9 +160,9 @@ func (cd *Countdown) FindWords(s string, maxhits int, maxdist int) FindWordsResu
 	}
 
 	// Ensure that poorly constructed clients can't allocate too much memory.
-	maxhits = clampInt(maxhits, 0, 1<<12)
+	limit = clampInt(limit, 0, 1<<12)
 
-	result := NewFindWordsResult(maxhits)
+	result := NewFindWordsResult(limit)
 	result.Query = target.word
 
 scankeys:
@@ -186,7 +186,7 @@ scankeys:
 					if maxdist < 0 || dist <= maxdist {
 						result.Words = append(result.Words, WordDistResult{word.word, dist})
 						result.NumHits++
-						if result.NumHits >= maxhits && maxhits > 0 {
+						if result.NumHits >= limit && limit > 0 {
 							break scankeys
 						}
 					} else {

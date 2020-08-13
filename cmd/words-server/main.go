@@ -84,10 +84,10 @@ func (state *State) wordsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: Limit parameter ranges. Error on out-of-range.
 	maxdist := 4
-	maxhits := 10
+	limit := 10
 
 	start := time.Now()
-	result := state.cw.FindWords(scramble, maxhits, maxdist)
+	result := state.cw.FindWords(scramble, limit, maxdist)
 	elapsed := time.Since(start)
 
 	// Sort and extract just the words for the response
