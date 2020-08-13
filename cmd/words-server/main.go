@@ -87,21 +87,15 @@ func (state *State) wordsHandler(w http.ResponseWriter, r *http.Request) {
 	maxhits := 10
 
 	start := time.Now()
-	// BUG: Current algorithm can't make meaninful use of maxhits -- it will when we fix it later.
 	result := state.cw.FindWords(scramble, maxhits, maxdist)
 	elapsed := time.Since(start)
 
 	// Sort and extract just the words for the response
 	sorted := result.Sort()
 
-	sorted_words := make([]string, 0, len(sorted))
+	sorted_words := make([]string, len(sorted))
 	for i, worddist := range sorted {
-		// sorted_words[i] = worddist.Word
-		// Temporary -- maxhits not effective yet.
-		sorted_words = append(sorted_words, worddist.Word)
-		if i == maxhits && maxhits > 0 {
-			break
-		}
+		sorted_words[i] = worddist.Word
 	}
 
 	res := WordsResponse{
