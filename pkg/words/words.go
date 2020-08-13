@@ -18,6 +18,8 @@ func clampInt(value int, lo int, hi int) int {
 	return value
 }
 
+// Countdown represents a dictionary of words of some minimum and maximum length,
+// and partitioned by length.
 type Countdown struct {
 	minlen int
 	maxlen int
@@ -69,7 +71,7 @@ func NewCountdown(minlen int, maxlen int) *Countdown {
 }
 
 func (cd *Countdown) FindWords(s string, limit int, maxdist int) FindWordsResult {
-	target := NewSearchEntry(s)
+	target := NewCountdownSearchEntry(s)
 
 	// Adjust to be within valid range.
 	if maxdist < 0 || maxdist > cd.maxlen {
@@ -107,7 +109,7 @@ scankeys:
 							break scankeys
 						}
 					} else {
-						// This can actually never happen now, unless strings were added wrong.
+						// This triggers if the target is longer than maxlen, a sort of mismatch between dictionary and input.
 						result.NumDistFail++
 					}
 				} else {
@@ -123,7 +125,7 @@ scankeys:
 }
 
 func (cd *Countdown) addWord(word string) bool {
-	we := NewSearchEntry(word)
+	we := NewCountdownSearchEntry(word)
 
 	if we.key == 0 {
 		return false
