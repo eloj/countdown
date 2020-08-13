@@ -6,46 +6,7 @@ import (
 	"math/bits"
 	"os"
 	"sort"
-	"strings"
 )
-
-type CountdownSearchEntry struct {
-	key    uint32
-	word   string
-	sorted string
-	// dups   int // number of duplicate characters in word.
-}
-
-func NewSearchEntry(word string) CountdownSearchEntry {
-	we := CountdownSearchEntry{}
-
-	we.word = strings.TrimSpace(NormalizeLatin1(word))
-	we.sorted = sortWord(we.word)
-	we.key = deriveKey32(we.sorted)
-	// we.dups = len(word) - bits.OnesCount32(we.key)
-
-	return we
-}
-
-func sortWord(word string) string {
-	ra := []rune(word)
-	sort.Slice(ra, func(i, j int) bool { return ra[i] < ra[j] })
-	return string(ra)
-}
-
-func deriveKey32(word string) uint32 {
-	var key uint32
-
-	for i := 0; i < len(word); i++ {
-		ch := word[i]
-		if ch >= 'a' && ch <= 'z' {
-			key |= 1 << (ch - 'a')
-		} else {
-			key |= 1 << 31 // Unknown-bit
-		}
-	}
-	return key
-}
 
 // clampInt Clamps an int to the range determined by the lo and hi arguments and returns it.
 func clampInt(value int, lo int, hi int) int {
@@ -57,28 +18,10 @@ func clampInt(value int, lo int, hi int) int {
 	return value
 }
 
-// CountdownWords represents a set search words and keys sharing the same length.
-type CountdownWords struct {
-	keys []uint32 // The keys array more than doubles the search speed vs iterating over the words array directly.
-	words  []CountdownSearchEntry
-}
-
-func NewCountdownWords() CountdownWords {
-	cdw := CountdownWords{}
-	cdw.keys = make([]uint32, 0, 1024)
-	cdw.words = make([]CountdownSearchEntry, 0, 1024)
-	return cdw
-}
-
-func (cdw *CountdownWords) Add(se CountdownSearchEntry) {
-	cdw.keys = append(cdw.keys, se.key)
-	cdw.words = append(cdw.words, se)
-}
-
 type Countdown struct {
 	minlen int
 	maxlen int
-	lvl []CountdownWords
+	lvl    []CountdownWords
 }
 
 type WordDistResult struct {
@@ -117,38 +60,12 @@ func NewCountdown(minlen int, maxlen int) *Countdown {
 	cd := &Countdown{}
 	cd.minlen = minlen
 	cd.maxlen = maxlen
-	levels := maxlen - minlen + 1;
+	levels := maxlen - minlen + 1
 	cd.lvl = make([]CountdownWords, levels)
 	for i := range cd.lvl {
 		cd.lvl[i] = NewCountdownWords()
 	}
 	return cd
-}
-
-// All characters in word must exist in target.
-func verifyWord(word string, target string) bool {
-	sw := word
-	tw := target
-
-	var j int
-	var i int
-	for i = 0; i < len(sw) && j < len(tw); i++ {
-		// Scan forward if current character larger than target's.
-		for sw[i] > tw[j] {
-			j++
-			if j >= len(tw) {
-				break
-			}
-		}
-		// Match, step target forward once.
-		if sw[i] == tw[j] {
-			j++
-		} else {
-			return false
-		}
-	}
-	// Verify all input matched.
-	return i == len(sw)
 }
 
 func (cd *Countdown) FindWords(s string, limit int, maxdist int) FindWordsResult {
@@ -167,7 +84,7 @@ func (cd *Countdown) FindWords(s string, limit int, maxdist int) FindWordsResult
 
 scankeys:
 	// Scan words of decreasing length ...
-	for level := 0 ; level <= maxdist ; level++ {
+	for level := 0; level <= maxdist; level++ {
 		for idx, wordKey := range cd.lvl[level].keys {
 			result.NumChecked++
 
@@ -190,6 +107,7 @@ scankeys:
 							break scankeys
 						}
 					} else {
+						// This can actually never happen now, unless strings were added wrong.
 						result.NumDistFail++
 					}
 				} else {
