@@ -9,10 +9,12 @@ import (
 )
 
 type Config struct {
-	Dictionaries []string `yaml:"dictionaries"`
-	MinWordLen   int      `yaml:"min_word_len"`
-	MaxWordLen   int      `yaml:"max_word_len"`
-	Port         int      `yaml:"port"` // meh
+	Dictionaries   []string `yaml:"dictionaries"`
+	MinWordLen     int      `yaml:"min_word_len"`
+	MaxWordLen     int      `yaml:"max_word_len"`
+	DefaultLimit   int      `yaml:"default_limit"`
+	DefaultMaxDist int      `yaml:"default_maxdist"`
+	Port           int      `yaml:"port"` // meh
 }
 
 func (config *Config) ReadConfigurationFile(filename string) error {

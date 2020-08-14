@@ -22,7 +22,7 @@ All code is provided under the [MIT License](LICENSE).
 ## Example
 
 ```bash
-$ ./words-server &
+$ ./words-server &>server.log &
 $ curl -s localhost:8080/countdown/v1/words/LESRNOXIS | json_pp
 ```
 
@@ -46,10 +46,7 @@ $ curl -s localhost:8080/countdown/v1/words/LESRNOXIS | json_pp
 
 ## To Do
 
-* Finish web service
-* Interactive mode.
-* golint
-* Benchmarks
 * Swagger API spec
 * Example http client to go with server
+* golint
 * Docker packaging?

@@ -66,17 +66,24 @@ func SendErrorResponse(w http.ResponseWriter, status int, msg string, desc strin
 }
 
 func (state *State) wordsHandler(w http.ResponseWriter, r *http.Request) {
+	// Setup defaults
+	args := &WordParams{
+		Limit:   conf.DefaultLimit,
+		Maxdist: conf.DefaultMaxDist,
+	}
 
 	if !strings.HasPrefix(r.URL.Path, "/countdown/v1/words/") {
 		w.WriteHeader(http.StatusNotFound)
 		return
-
 	}
 
 	switch r.Method {
 	case "GET":
-		// TODO: Separate module for parsing and validation + error returns.
-		// args, err := url.ParseQuery(r.URL.Query())
+		if err := ParseWordParams(r.URL, args); err != nil {
+			log.Error().Err(err).Msg("Query parameter error")
+			SendErrorResponse(w, http.StatusBadRequest, "Query parameter error", err.Error())
+			return
+		}
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -84,12 +91,8 @@ func (state *State) wordsHandler(w http.ResponseWriter, r *http.Request) {
 
 	scramble := strings.TrimPrefix(r.URL.Path, "/countdown/v1/words/")
 
-	// TODO: Limit parameter ranges. Error on out-of-range.
-	maxdist := 4
-	limit := 10
-
 	start := time.Now()
-	result := state.cw.FindWords(scramble, limit, maxdist)
+	result := state.cw.FindWords(scramble, args.Limit, args.Maxdist)
 	elapsed := time.Since(start)
 
 	// Sort and extract just the words for the response
@@ -118,7 +121,7 @@ func (state *State) wordsHandler(w http.ResponseWriter, r *http.Request) {
 		res.MaxDist = sorted[len(sorted_words)-1].Dist
 	}
 
-	log.Debug().Str("q", scramble).Int("hits", res.NumHits).Int("checked", res.NumChecked).Dur("find_ms", elapsed).Msg("Query")
+	log.Debug().Interface("args", args).Str("q", scramble).Int("hits", res.NumHits).Int("checked", res.NumChecked).Dur("find_ms", elapsed).Msg("Query")
 
 	SendResponse(w, 200, res)
 }
@@ -131,7 +134,6 @@ func startHttpServer(wg *sync.WaitGroup) *http.Server {
 	http.HandleFunc("/countdown/v1/words/", state.wordsHandler)
 
 	wg.Add(1)
-
 	go func() {
 		defer wg.Done()
 
