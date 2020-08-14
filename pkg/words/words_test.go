@@ -1,23 +1,11 @@
 package words
 
 import (
-	"github.com/go-test/deep"
 	"strings"
 	"testing"
-)
 
-func checkEqual(t *testing.T, actual, expected interface{}) {
-	t.Helper()
-	diff := deep.Equal(actual, expected)
-	if diff == nil {
-		return
-	} else if len(diff) > 0 {
-		for _, d := range diff {
-			t.Log("\t -- \t", d)
-		}
-		t.Error("checkEqual failed.")
-	}
-}
+	test "github.com/eloj/go-eddy/pkg/test"
+)
 
 func TestFindWord(t *testing.T) {
 
@@ -51,5 +39,5 @@ KISSABLE
 	expected.NumDistFail = 2
 	expected.Words = []WordDistResult{{"kissable", 1}, {"bagless", 2}, {"gables", 3}}
 
-	checkEqual(t, res, expected)
+	test.CheckEqual(t, res, expected)
 }
