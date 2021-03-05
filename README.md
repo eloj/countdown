@@ -17,7 +17,7 @@ Validity of a word is decided by a dictionary, nothing else. There is no languag
 
 All code is provided under the [MIT License](LICENSE).
 
-[![Build Status](https://travis-ci.org/eloj/countdown.svg?branch=master)](https://travis-ci.org/eloj/countdown)
+[![Build Status](https://travis-ci.org/eloj/countdown.svg?branch=master)](https://travis-ci.org/eloj/countdown) [![Go Report Card](https://goreportcard.com/badge/github.com/eloj/countdown)](https://goreportcard.com/report/github.com/eloj/countdown)
 
 ## Example
 
