@@ -22,16 +22,16 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type State struct {
+type serverState struct {
 	cw *cntw.Countdown
 }
 
-type ErrorResponse struct {
+type errorResponse struct {
 	Error       string `json:"error"`
 	Description string `json:"description,omitempty"`
 }
 
-type WordsResponse struct {
+type wordsResponse struct {
 	Query      string   `json:"query"`
 	Duration   float64  `json:"duration"` // In ms, document.
 	NumHits    int      `json:"num_hits"`
@@ -43,10 +43,10 @@ type WordsResponse struct {
 
 var (
 	conf  Config
-	state State
+	state serverState
 )
 
-func SendResponse(w http.ResponseWriter, status int, payload interface{}) error {
+func sendResponse(w http.ResponseWriter, status int, payload interface{}) error {
 	b, err := json.Marshal(payload)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -59,15 +59,15 @@ func SendResponse(w http.ResponseWriter, status int, payload interface{}) error 
 	return err
 }
 
-func SendErrorResponse(w http.ResponseWriter, status int, msg string, desc string) error {
-	res := ErrorResponse{Error: msg, Description: desc}
-	return SendResponse(w, status, res)
+func sendErrorResponse(w http.ResponseWriter, status int, msg string, desc string) error {
+	res := errorResponse{Error: msg, Description: desc}
+	return sendResponse(w, status, res)
 
 }
 
-func (state *State) wordsHandler(w http.ResponseWriter, r *http.Request) {
+func (state *serverState) wordsHandler(w http.ResponseWriter, r *http.Request) {
 	// Setup defaults
-	args := &WordParams{
+	args := &wordParams{
 		Limit:   conf.DefaultLimit,
 		Maxdist: conf.DefaultMaxDist,
 	}
@@ -79,9 +79,9 @@ func (state *State) wordsHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "GET":
-		if err := ParseWordParams(r.URL, args); err != nil {
+		if err := parseWordParams(r.URL, args); err != nil {
 			log.Error().Err(err).Msg("Query parameter error")
-			SendErrorResponse(w, http.StatusBadRequest, "Query parameter error", err.Error())
+			sendErrorResponse(w, http.StatusBadRequest, "Query parameter error", err.Error())
 			return
 		}
 	default:
@@ -98,35 +98,35 @@ func (state *State) wordsHandler(w http.ResponseWriter, r *http.Request) {
 	// Sort and extract just the words for the response
 	sorted := result.Sort()
 
-	sorted_words := make([]string, len(sorted))
+	sortedWords := make([]string, len(sorted))
 	for i, worddist := range sorted {
-		sorted_words[i] = worddist.Word
+		sortedWords[i] = worddist.Word
 	}
 
-	duration_ms := float64(elapsed) / float64(time.Millisecond)
+	durationMs := float64(elapsed) / float64(time.Millisecond)
 
-	res := WordsResponse{
+	res := wordsResponse{
 		Query:      result.Query,
-		Duration:   duration_ms,
+		Duration:   durationMs,
 		NumHits:    result.NumHits,
 		NumChecked: result.NumChecked,
 		MinDist:    0,
 		MaxDist:    0,
-		Words:      sorted_words,
+		Words:      sortedWords,
 	}
 
 	// Extract actual min and max distance of result
-	if len(sorted_words) > 0 {
+	if len(sortedWords) > 0 {
 		res.MinDist = sorted[0].Dist
-		res.MaxDist = sorted[len(sorted_words)-1].Dist
+		res.MaxDist = sorted[len(sortedWords)-1].Dist
 	}
 
 	log.Debug().Interface("args", args).Str("q", scramble).Int("hits", res.NumHits).Int("checked", res.NumChecked).Dur("find_ms", elapsed).Msg("Query")
 
-	SendResponse(w, 200, res)
+	sendResponse(w, 200, res)
 }
 
-func startHttpServer(wg *sync.WaitGroup) *http.Server {
+func startHTTPServer(wg *sync.WaitGroup) *http.Server {
 	srv := &http.Server{
 		Addr: fmt.Sprintf(":%d", conf.Port),
 	}
@@ -155,7 +155,7 @@ func main() {
 
 	flag.Parse()
 
-	if err := conf.ReadConfigurationFile(*conffile); err != nil {
+	if err := conf.readConfigurationFile(*conffile); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to read configuration from '%s': %v\n", *conffile, err)
 		os.Exit(1)
 	}
@@ -174,7 +174,7 @@ func main() {
 	}
 
 	var httpServerWg sync.WaitGroup
-	srv := startHttpServer(&httpServerWg)
+	srv := startHTTPServer(&httpServerWg)
 
 	signalch := make(chan os.Signal, 1)
 	signal.Notify(signalch, os.Interrupt, syscall.SIGTERM)

@@ -8,6 +8,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// Config structure for words-server.
 type Config struct {
 	Dictionaries   []string `yaml:"dictionaries"`
 	MinWordLen     int      `yaml:"min_word_len"`
@@ -17,7 +18,7 @@ type Config struct {
 	Port           int      `yaml:"port"` // meh
 }
 
-func (config *Config) ReadConfigurationFile(filename string) error {
+func (config *Config) readConfigurationFile(filename string) error {
 	f, err := os.Open(filename)
 	if err != nil {
 		return err

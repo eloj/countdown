@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-type WordParams struct {
+type wordParams struct {
 	Limit   int `json:"limit"`
 	Maxdist int `json:"maxdist"`
 }
@@ -19,7 +19,7 @@ func validateIntRange(s string, min int, max int) (int, bool) {
 	return int(val), int(val) >= min && int(val) <= max
 }
 
-func ParseWordParams(url *url.URL, wp *WordParams) error {
+func parseWordParams(url *url.URL, wp *wordParams) error {
 	var ok bool
 	for qk, qvs := range url.Query() {
 		narg := len(qvs)

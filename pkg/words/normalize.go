@@ -11,6 +11,7 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
+// NormalizeLatin1 lowercases, replaces codepoints beyond 255 with a space.
 func NormalizeLatin1(word string) string {
 	word = strings.ToLower(word)
 

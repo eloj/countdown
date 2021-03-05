@@ -32,11 +32,13 @@ type CountdownWords struct {
 	words []CountdownSearchEntry
 }
 
+// WordDistResult represents words and their distance to the sought word.
 type WordDistResult struct {
 	Word string
 	Dist int
 }
 
+// FindWordsResult is a result-set returned by FindWords
 type FindWordsResult struct {
 	Query string
 	Words []WordDistResult
@@ -48,6 +50,7 @@ type FindWordsResult struct {
 	NumDistFail  int
 }
 
+// NewCountdownWords creates a new Countdown words database
 func NewCountdownWords() CountdownWords {
 	cdw := CountdownWords{}
 	cdw.keys = make([]uint32, 0, 1024)
@@ -55,17 +58,20 @@ func NewCountdownWords() CountdownWords {
 	return cdw
 }
 
+// Add a search entry to the database.
 func (cdw *CountdownWords) Add(se CountdownSearchEntry) {
 	cdw.keys = append(cdw.keys, se.key)
 	cdw.words = append(cdw.words, se)
 }
 
+// NewFindWordsResult creates and initializes a new result-set
 func NewFindWordsResult(capacity int) FindWordsResult {
 	result := FindWordsResult{}
 	result.Words = make([]WordDistResult, 0, capacity)
 	return result
 }
 
+// Sort on word distance and sub-sort on word length
 func (result *FindWordsResult) Sort() []WordDistResult {
 	sort.Slice(result.Words, func(i, j int) bool {
 		if result.Words[i].Dist == result.Words[j].Dist {
@@ -76,6 +82,7 @@ func (result *FindWordsResult) Sort() []WordDistResult {
 	return result.Words
 }
 
+// NewCountdown creates a new Countdown search object.
 func NewCountdown(minlen int, maxlen int) *Countdown {
 	cd := &Countdown{}
 	cd.minlen = minlen
@@ -88,6 +95,7 @@ func NewCountdown(minlen int, maxlen int) *Countdown {
 	return cd
 }
 
+// FindWords searches for the longest words possible.
 func (cd *Countdown) FindWords(s string, limit int, maxdist int) FindWordsResult {
 	target := NewCountdownSearchEntry(s)
 
@@ -156,6 +164,7 @@ func (cd *Countdown) addWord(word string) bool {
 	return true
 }
 
+// AddDictionary adds words from a dictionary (io.Reader interface) to the database.
 func (cd *Countdown) AddDictionary(r io.Reader) (int, error) {
 	var err error
 	var cnt int
@@ -172,6 +181,7 @@ func (cd *Countdown) AddDictionary(r io.Reader) (int, error) {
 	return cnt, err
 }
 
+// AddDictionaryFile adds lines from a file to the database.
 func (cd *Countdown) AddDictionaryFile(filename string) (int, error) {
 	var fh *os.File
 	var cnt int

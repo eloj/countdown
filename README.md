@@ -46,7 +46,7 @@ $ curl -s localhost:8080/countdown/v1/words/LESRNOXIS | json_pp
 
 ## To Do
 
+* Add TLS support
 * Swagger API spec
-* Example http client to go with server
-* golint
+* Example client to go with server
 * Docker packaging?
