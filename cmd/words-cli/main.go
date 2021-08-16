@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	cntw "countdown/pkg/words"
+	cntw "github.com/eloj/countdown/pkg/words"
 )
 
 func main() {

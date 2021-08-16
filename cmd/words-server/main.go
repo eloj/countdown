@@ -17,7 +17,7 @@ import (
 	"syscall"
 	"time"
 
-	cntw "countdown/pkg/words"
+	cntw "github.com/eloj/countdown/pkg/words"
 
 	"github.com/rs/zerolog/log"
 )
