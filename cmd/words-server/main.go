@@ -19,6 +19,7 @@ import (
 
 	cntw "github.com/eloj/countdown/pkg/words"
 
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
@@ -33,7 +34,7 @@ type errorResponse struct {
 
 type wordsResponse struct {
 	Query      string   `json:"query"`
-	Duration   float64  `json:"duration"` // In ms, document.
+	Duration   float64  `json:"duration_ms"`
 	NumHits    int      `json:"num_hits"`
 	NumChecked int      `json:"num_checked"`
 	MinDist    int      `json:"min_dist,omitempty"` // Only valid if words > 0
@@ -93,7 +94,7 @@ func (state *serverState) wordsHandler(w http.ResponseWriter, r *http.Request) {
 
 	start := time.Now()
 	result := state.cw.FindWords(scramble, args.Limit, args.Maxdist)
-	elapsed := time.Since(start)
+	elapsed_ns := time.Since(start)
 
 	// Sort and extract just the words for the response
 	sorted := result.Sort()
@@ -103,7 +104,8 @@ func (state *serverState) wordsHandler(w http.ResponseWriter, r *http.Request) {
 		sortedWords[i] = worddist.Word
 	}
 
-	durationMs := float64(elapsed) / float64(time.Millisecond)
+	// Convert nanosecond duration into milliseconds.
+	durationMs := float64(elapsed_ns) / float64(time.Millisecond)
 
 	res := wordsResponse{
 		Query:      result.Query,
@@ -121,7 +123,7 @@ func (state *serverState) wordsHandler(w http.ResponseWriter, r *http.Request) {
 		res.MaxDist = sorted[len(sortedWords)-1].Dist
 	}
 
-	log.Debug().Interface("args", args).Str("q", scramble).Int("hits", res.NumHits).Int("checked", res.NumChecked).Dur("find_ms", elapsed).Msg("Query")
+	log.Debug().Interface("args", args).Str("q", scramble).Int("hits", res.NumHits).Int("checked", res.NumChecked).Dur("find_ms", elapsed_ns).Msg("Query")
 
 	sendResponse(w, 200, res)
 }
@@ -147,6 +149,8 @@ func startHTTPServer(wg *sync.WaitGroup) *http.Server {
 
 func main() {
 	conffile := flag.String("config", "config/words-server.yaml", "Configuration file")
+
+	zerolog.DurationFieldUnit = time.Millisecond // The default, but let's be explicit.
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [options]\n", os.Args[0])
