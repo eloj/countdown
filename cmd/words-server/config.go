@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // Config structure for words-server.
@@ -31,7 +31,7 @@ func (config *Config) readConfiguration(r io.Reader) error {
 	var err error
 
 	decoder := yaml.NewDecoder(r)
-	decoder.SetStrict(true)
+	decoder.KnownFields(true)
 
 	if err = decoder.Decode(config); err != nil {
 		return err
