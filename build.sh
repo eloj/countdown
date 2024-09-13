@@ -9,7 +9,11 @@ if [ $? -ne 0 ]; then
 	exit 1
 fi
 if [ -x "$(command -v $YAMLLINTER)" ]; then
-	$YAMLLINTER config/*.yaml || (echo "Configuration file error, aborted." && exit 2)
+	$YAMLLINTER config/*.yaml
+	if [ $? -ne 0 ]; then
+		echo "Configuration file error, aborted."
+		exit 1
+	fi
 	echo "Configuration file validation PASSED."
 else
 	echo "Configuration file validation skipped, '$YAMLLINTER' not available."
