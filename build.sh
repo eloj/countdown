@@ -1,13 +1,11 @@
 #!/bin/bash
 YAMLLINTER=yamllint
+G_ENV="CGO_ENABLED=0"
+GOBUILD="env ${G_ENV} go build"
+GOTEST="env ${G_ENV} go test"
 root=$(realpath $(dirname "${BASH_SOURCE[0]}"))
 cd "$root"
 
-go test ./... 2>&1 | tee .gotest.log
-if [ $? -ne 0 ]; then
-	echo "Test failures. Build aborted."
-	exit 1
-fi
 if [ -x "$(command -v $YAMLLINTER)" ]; then
 	$YAMLLINTER config/*.yaml
 	if [ $? -ne 0 ]; then
@@ -18,8 +16,16 @@ if [ -x "$(command -v $YAMLLINTER)" ]; then
 else
 	echo "Configuration file validation skipped, '$YAMLLINTER' not available."
 fi
+
+echo "Testing..."
+${GOTEST} ./... 2>&1 | tee .gotest.log
+if [ $? -ne 0 ]; then
+	echo "Test failures. Build aborted."
+	exit 1
+fi
+
 echo "Building..."
-GOBUILD="env CGO_ENABLED=0 go build"
-$GOBUILD ./cmd/words-cli
-$GOBUILD ./cmd/words-server
-echo "Build done."
+${GOBUILD} ./cmd/words-cli
+${GOBUILD} ./cmd/words-server
+
+echo "Done."
